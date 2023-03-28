@@ -7,6 +7,7 @@ import sys
 import string
 import time
 import requests
+import threading
 from botocore.exceptions import ClientError
 from opensearchpy import OpenSearch, helpers
 
@@ -284,8 +285,9 @@ def handler(event, context):
     secret_manager.fetch_secret()
 
     os_client = OpenSearch([PROXY_ENDPOINT], http_auth=(secret_manager.get_username(), secret_manager.get_password()))
-
-    do_indexing(os_client, user_params)
+    lock = threading.Lock()
+    with lock:
+      do_indexing(os_client, user_params)
   except Exception as e:
     print(str(e))
     return send_failure_to_pipeline(pipeline, job_id, str(e), invoke_id)
